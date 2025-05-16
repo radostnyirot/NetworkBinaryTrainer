@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { and, eq } from "drizzle-orm";
-import { generateCertificateNumber } from "./utils";
+import * as utils from "./utils";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -171,7 +171,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createCertificate(userId: number, totalScore: number): Promise<Certificate> {
-    const certificateNumber = generateCertificateNumber(userId);
+    const certificateNumber = utils.generateCertificateNumber(userId);
     
     const [certificate] = await db.insert(certificates)
       .values({

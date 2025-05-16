@@ -7,6 +7,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useLocation, Link } from 'wouter';
 import { Award, Download, ArrowLeft } from 'lucide-react';
 
+interface StatsData {
+  completedLessons: number;
+  totalLessons: number;
+  completionPercentage: number;
+  averageScore: number;
+}
+
+interface CertificateData {
+  id: number;
+  userId: number;
+  issueDate: string;
+  certificateNumber: string;
+  completionDate: string;
+  totalScore: number;
+}
+
 export default function Certificate() {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -14,28 +30,31 @@ export default function Certificate() {
   const [, setLocation] = useLocation();
 
   // Запрос статистики прогресса
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/progress/stats'],
-    onError: () => {
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+    queryKey: ['/api/progress/stats']
+  });
+
+  // Перенаправляем на страницу входа при ошибке
+  useEffect(() => {
+    if (statsError) {
       setLocation('/login');
     }
-  });
+  }, [statsError, setLocation]);
 
   // Запрос сертификата
   const { data: certificate, isLoading: certificateLoading, refetch } = useQuery({
     queryKey: ['/api/certificate'],
-    retry: false,
-    onError: () => {} // Игнорируем ошибку, т.к. сертификата может не быть
+    retry: false
   });
 
   // Генерация сертификата
   const generateCertificate = async () => {
-    if (!stats || stats.completedLessons < stats.totalLessons) {
+    if (!stats || !stats.completedLessons || !stats.totalLessons || stats.completedLessons < stats.totalLessons) {
       toast({
         title: t('Недостаточно завершенных уроков', 'Not enough completed lessons'),
         description: t(
-          `Завершите все ${stats?.totalLessons} уроков, чтобы получить сертификат.`,
-          `Complete all ${stats?.totalLessons} lessons to get a certificate.`
+          `Завершите все ${stats?.totalLessons || 0} уроков, чтобы получить сертификат.`,
+          `Complete all ${stats?.totalLessons || 0} lessons to get a certificate.`
         ),
         variant: 'destructive'
       });
