@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/context/language-context';
+import { useProgress } from '@/context/progress-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,12 +14,17 @@ import {
   SheetContent, 
   SheetTrigger 
 } from '@/components/ui/sheet';
-import { Menu, HelpCircle, ChevronDown } from 'lucide-react';
+import { Menu, HelpCircle, ChevronDown, Award, LogOut, User } from 'lucide-react';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Header() {
   const [location] = useLocation();
   const { language, setLanguage, t } = useLanguage();
+  const { isAuthenticated } = useProgress();
+  const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [, setLocation] = useLocation();
   
   const navigation = [
     { name: t('Бинарные кубики', 'Binary Blocks'), href: '/binary-basics' },
@@ -26,6 +32,26 @@ export default function Header() {
     { name: t('Маски подсети', 'Subnet Masks'), href: '/subnet-masks' },
     { name: t('Проектирование', 'Network Design'), href: '/network-design' },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest('GET', '/api/logout');
+      await queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      
+      toast({
+        title: t('Выход выполнен', 'Logout successful'),
+        description: t('Вы вышли из системы', 'You have been logged out'),
+      });
+      
+      setLocation('/');
+    } catch (error) {
+      toast({
+        title: t('Ошибка при выходе', 'Logout error'),
+        description: t('Не удалось выйти из системы', 'Failed to log out'),
+        variant: 'destructive'
+      });
+    }
+  };
   
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -82,9 +108,36 @@ export default function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button className="bg-[#2563EB] text-white hover:bg-[#2563EB]/90">
-            {t('Войти', 'Sign In')}
-          </Button>
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-1">
+                  <User className="h-5 w-5 mr-1" />
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/certificate">
+                    <a className="flex w-full items-center">
+                      <Award className="h-4 w-4 mr-2" />
+                      {t('Сертификат', 'Certificate')}
+                    </a>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {t('Выйти', 'Log out')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/login">
+              <Button className="bg-[#2563EB] text-white hover:bg-[#2563EB]/90">
+                {t('Войти', 'Sign In')}
+              </Button>
+            </Link>
+          )}
           
           <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <SheetTrigger asChild className="md:hidden">
@@ -106,6 +159,47 @@ export default function Header() {
                     </a>
                   </Link>
                 ))}
+                
+                {!isAuthenticated ? (
+                  <>
+                    <Link href="/login">
+                      <a
+                        className="text-lg font-medium text-gray-600"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {t('Войти', 'Log in')}
+                      </a>
+                    </Link>
+                    <Link href="/register">
+                      <a
+                        className="text-lg font-medium text-gray-600"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {t('Регистрация', 'Register')}
+                      </a>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/certificate">
+                      <a
+                        className="text-lg font-medium text-gray-600"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {t('Сертификат', 'Certificate')}
+                      </a>
+                    </Link>
+                    <a
+                      className="text-lg font-medium text-gray-600 cursor-pointer"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      {t('Выйти', 'Log out')}
+                    </a>
+                  </>
+                )}
               </div>
             </SheetContent>
           </Sheet>

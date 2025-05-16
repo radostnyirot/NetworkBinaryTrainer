@@ -12,6 +12,9 @@ import Home from "@/pages/home";
 import BinaryBasics from "@/pages/binary-basics";
 import IpAddresses from "@/pages/ip-addresses";
 import SubnetMasks from "@/pages/subnet-masks";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
+import Certificate from "@/pages/certificate";
 
 function Router() {
   return (
@@ -20,6 +23,9 @@ function Router() {
       <Route path="/binary-basics" component={BinaryBasics} />
       <Route path="/ip-addresses" component={IpAddresses} />
       <Route path="/subnet-masks" component={SubnetMasks} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/certificate" component={Certificate} />
       <Route component={NotFound} />
     </Switch>
   );
